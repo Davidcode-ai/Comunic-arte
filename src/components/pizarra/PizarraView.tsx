@@ -83,13 +83,13 @@ export function PizarraView() {
       const result = await recognizeSymbol(currentDrawing, symbols)
 
       if (!result) {
-        showStatus('No reconozco este símbolo. Prueba a redibujarlo o guárdalo como nuevo.')
+        showStatus('No hay trazo reconocible. Dibuja un símbolo más grande.')
         return
       }
 
       setSelectedSymbol(result.symbol)
       speakText(result.symbol.word)
-      showStatus(`Símbolo reconocido: ${result.symbol.word}`)
+      showStatus(`Lo más parecido: ${result.symbol.word}`)
     } catch {
       showStatus('Error al reconocer el símbolo')
     } finally {

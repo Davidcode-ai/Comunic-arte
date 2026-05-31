@@ -1,10 +1,9 @@
 import type { CustomSymbol } from '../types/saac'
 
-const COMPARE_SIZE = 64
-const INK_THRESHOLD = 210
-const MIN_SIMILARITY = 0.38
-const MIN_MARGIN = 0.06
-const HIGH_CONFIDENCE = 0.62
+const COMPARE_SIZE = 80
+const INK_THRESHOLD = 235
+/** Umbral mínimo muy bajo: casi siempre elige el más parecido. */
+const MIN_SIMILARITY = 0.05
 
 export interface RecognitionResult {
   symbol: CustomSymbol
@@ -18,6 +17,25 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('No se pudo cargar la imagen'))
     img.src = dataUrl
   })
+}
+
+function dilate(bitmap: Uint8Array, size: number, radius = 2): Uint8Array {
+  const out = new Uint8Array(bitmap.length)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!bitmap[y * size + x]) continue
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const nx = x + dx
+          const ny = y + dy
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+            out[ny * size + nx] = 1
+          }
+        }
+      }
+    }
+  }
+  return out
 }
 
 /** Extrae bitmap binario normalizado (centrado y escalado). */
@@ -57,7 +75,7 @@ function extractNormalizedBitmap(img: HTMLImageElement, size: number): Uint8Arra
 
   const cropW = maxX - minX + 1
   const cropH = maxY - minY + 1
-  const padding = 6
+  const padding = 8
   const scale = Math.min(
     (size - padding * 2) / cropW,
     (size - padding * 2) / cropH,
@@ -99,7 +117,7 @@ function extractNormalizedBitmap(img: HTMLImageElement, size: number): Uint8Arra
     bitmap[i] = gray < INK_THRESHOLD ? 1 : 0
   }
 
-  return bitmap
+  return dilate(bitmap, size, 2)
 }
 
 function jaccardSimilarity(a: Uint8Array, b: Uint8Array): number {
@@ -127,12 +145,24 @@ function diceSimilarity(a: Uint8Array, b: Uint8Array): number {
   return denom === 0 ? 0 : (2 * intersection) / denom
 }
 
-/** Compara con pequeños desplazamientos para tolerar variaciones al redibujar. */
+/** Similitud de forma: qué parte del trazo actual cae sobre el guardado. */
+function coverageSimilarity(current: Uint8Array, saved: Uint8Array): number {
+  let currentInk = 0
+  let hit = 0
+  for (let i = 0; i < current.length; i++) {
+    if (current[i]) {
+      currentInk++
+      if (saved[i]) hit++
+    }
+  }
+  return currentInk === 0 ? 0 : hit / currentInk
+}
+
 function compareBitmaps(a: Uint8Array, b: Uint8Array, size: number): number {
   let best = 0
 
-  for (let oy = -2; oy <= 2; oy++) {
-    for (let ox = -2; ox <= 2; ox++) {
+  for (let oy = -5; oy <= 5; oy++) {
+    for (let ox = -5; ox <= 5; ox++) {
       let intersection = 0
       let union = 0
       let countA = 0
@@ -162,14 +192,15 @@ function compareBitmaps(a: Uint8Array, b: Uint8Array, size: number): number {
     }
   }
 
-  // Refuerzo sin desplazamiento
-  const direct =
-    (jaccardSimilarity(a, b) + diceSimilarity(a, b)) / 2
-  return Math.max(best, direct)
+  const direct = (jaccardSimilarity(a, b) + diceSimilarity(a, b)) / 2
+  const coverA = coverageSimilarity(a, b)
+  const coverB = coverageSimilarity(b, a)
+
+  return Math.max(best, direct, coverA, coverB)
 }
 
 /**
- * Compara el dibujo actual con los símbolos guardados y devuelve el mejor match.
+ * Devuelve siempre el símbolo guardado que más se parezca al dibujo actual.
  */
 export async function recognizeSymbol(
   currentDataUrl: string,
@@ -188,6 +219,9 @@ export async function recognizeSymbol(
     try {
       const img = await loadImage(symbol.imageData)
       const bitmap = extractNormalizedBitmap(img, COMPARE_SIZE)
+
+      if (!bitmap.some((v) => v === 1)) continue
+
       const score = compareBitmaps(currentBitmap, bitmap, COMPARE_SIZE)
       scored.push({ symbol, score })
     } catch {
@@ -199,16 +233,8 @@ export async function recognizeSymbol(
 
   scored.sort((a, b) => b.score - a.score)
   const best = scored[0]
-  const second = scored[1]
 
   if (best.score < MIN_SIMILARITY) return null
-
-  const isAmbiguous =
-    second &&
-    best.score - second.score < MIN_MARGIN &&
-    best.score < HIGH_CONFIDENCE
-
-  if (isAmbiguous) return null
 
   return best
 }
