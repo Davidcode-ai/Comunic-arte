@@ -7,7 +7,7 @@ import { useSpeech } from '../../hooks/useSpeech'
 export function BibliotecaView() {
   const [phrase, setPhrase] = useState<Pictogram[]>([])
   const [statusMessage, setStatusMessage] = useState('')
-  const { speakText, isSpeaking, supported } = useSpeech()
+  const { speakText, isSpeaking, supported, lastError } = useSpeech()
 
   const addToPhrase = useCallback((pictogram: Pictogram) => {
     setPhrase((prev) => [...prev, pictogram])
@@ -35,7 +35,13 @@ export function BibliotecaView() {
     <div className="flex h-full flex-col pb-52">
       {!supported && (
         <p className="mx-4 mt-4 rounded-lg bg-amber-50 px-4 py-2 text-amber-800" role="alert">
-          La síntesis de voz no está disponible en este navegador.
+          La síntesis de voz no está disponible en este navegador. Prueba Chrome.
+        </p>
+      )}
+
+      {lastError && (
+        <p className="mx-4 mt-2 rounded-lg bg-red-50 px-4 py-2 text-red-700" role="alert">
+          {lastError}
         </p>
       )}
 

@@ -4,6 +4,7 @@ import { DrawingCanvas, type DrawingCanvasHandle } from './DrawingCanvas'
 import { SaveSymbolModal } from './SaveSymbolModal'
 import { SymbolGallery } from './SymbolGallery'
 import { getCustomSymbols, saveCustomSymbol } from '../../utils/storage'
+import { recognizeSymbol } from '../../utils/symbolRecognition'
 import { useSpeech } from '../../hooks/useSpeech'
 
 export function PizarraView() {
@@ -14,7 +15,8 @@ export function PizarraView() {
   )
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
-  const { speakText, supported } = useSpeech()
+  const [isRecognizing, setIsRecognizing] = useState(false)
+  const { speakText, supported, lastError } = useSpeech()
 
   const showStatus = (msg: string) => {
     setStatusMessage(msg)
@@ -64,7 +66,7 @@ export function PizarraView() {
     }
   }
 
-  const handleRecognize = () => {
+  const handleRecognize = async () => {
     if (canvasRef.current?.isEmpty()) {
       showStatus('Dibuja un símbolo primero')
       return
@@ -73,10 +75,26 @@ export function PizarraView() {
       showStatus('Guarda al menos un símbolo para reconocer')
       return
     }
-    const latest = symbols[0]
-    setSelectedSymbol(latest)
-    speakText(latest.word)
-    showStatus(`Símbolo reconocido: ${latest.word}`)
+
+    setIsRecognizing(true)
+    try {
+      const currentDrawing = canvasRef.current?.toDataURL() ?? ''
+      if (!currentDrawing) return
+      const result = await recognizeSymbol(currentDrawing, symbols)
+
+      if (!result) {
+        showStatus('No reconozco este símbolo. Prueba a redibujarlo o guárdalo como nuevo.')
+        return
+      }
+
+      setSelectedSymbol(result.symbol)
+      speakText(result.symbol.word)
+      showStatus(`Símbolo reconocido: ${result.symbol.word}`)
+    } catch {
+      showStatus('Error al reconocer el símbolo')
+    } finally {
+      setIsRecognizing(false)
+    }
   }
 
   return (
@@ -88,7 +106,13 @@ export function PizarraView() {
 
       {!supported && (
         <p className="mx-4 mt-2 rounded-lg bg-amber-50 px-4 py-2 text-amber-800" role="alert">
-          La síntesis de voz no está disponible en este navegador. Prueba Chrome o Edge.
+          La síntesis de voz no está disponible en este navegador. Prueba Chrome.
+        </p>
+      )}
+
+      {lastError && (
+        <p className="mx-4 mt-2 rounded-lg bg-red-50 px-4 py-2 text-red-700" role="alert">
+          {lastError}
         </p>
       )}
 
@@ -109,6 +133,7 @@ export function PizarraView() {
         onSave={handleSaveClick}
         onSpeak={handleSpeak}
         onRecognize={handleRecognize}
+        isRecognizing={isRecognizing}
       />
 
       <SymbolGallery

@@ -13,10 +13,11 @@ interface DrawingCanvasProps {
   onSave: () => void
   onSpeak: () => void
   onRecognize: () => void
+  isRecognizing?: boolean
 }
 
 export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
-  function DrawingCanvas({ onSave, onSpeak, onRecognize }, ref) {
+  function DrawingCanvas({ onSave, onSpeak, onRecognize, isRecognizing = false }, ref) {
     const {
       canvasRef,
       containerRef,
@@ -73,11 +74,11 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
           <Button
             variant="secondary"
             onClick={onRecognize}
-            disabled={isEmpty}
+            disabled={isEmpty || isRecognizing}
             aria-label="Reconocer símbolo dibujado"
           >
             <ScanSearch size={22} aria-hidden="true" />
-            Reconocer
+            {isRecognizing ? 'Analizando...' : 'Reconocer'}
           </Button>
           <Button
             variant="primary"
