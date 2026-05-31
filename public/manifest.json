@@ -1,0 +1,23 @@
+{
+  "name": "Comunic-arte",
+  "short_name": "Comunic-arte",
+  "description": "Comunicación accesible mediante pictogramas y símbolos personalizados",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#2563EB",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    }
+  ]
+}

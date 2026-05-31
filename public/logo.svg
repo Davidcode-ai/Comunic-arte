@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Comunic-arte">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="brush" x1="280" y1="180" x2="380" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F97316"/>
+      <stop offset="1" stop-color="#FBBF24"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Speech bubble -->
+  <path
+    d="M128 148c0-33.137 26.863-60 60-60h136c33.137 0 60 26.863 60 60v96c0 33.137-26.863 60-60 60H248l-56 48v-48h-4c-33.137 0-60-26.863-60-60v-96z"
+    fill="#FFFFFF"
+  />
+  <!-- Pictogram dots (communication symbols) -->
+  <circle cx="208" cy="196" r="22" fill="#2563EB"/>
+  <circle cx="288" cy="196" r="22" fill="#10B981"/>
+  <circle cx="248" cy="256" r="22" fill="#F97316"/>
+  <!-- Paintbrush (arte) -->
+  <path
+    d="M312 168l56 56c8 8 8 21 0 29l-24 24c-8 8-21 8-29 0l-56-56 53-53z"
+    fill="url(#brush)"
+  />
+  <path
+    d="M296 320l-32 64 64-32-32-32z"
+    fill="#FDE68A"
+    stroke="#F59E0B"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <!-- Connection arc (linking communication + art) -->
+  <path
+    d="M168 360c40 24 136 24 176 0"
+    stroke="#FFFFFF"
+    stroke-width="16"
+    stroke-linecap="round"
+    opacity="0.35"
+  />
+</svg>
